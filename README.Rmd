@@ -1,0 +1,26 @@
+---
+title: "PreProcess files"
+author: "S Santos"
+date: "Thursday, November 06, 2014"
+output: html_document
+---
+
+# Introduction:
+
+This code calculates the minimum distance of approach from zc versus A curves in dynamic AFM. 
+
+For example zc vector and A vector create:
+
+dmin=zc-A
+
+# STEPS
+
+1. Place files already in standard form into the folder **Files**
+
+2. If you dont have them into single files process them with the code [here](https://github.com/FSDataAnalysis/PreProcessFiles).
+
+3. Run the ddmin code and the files will be processed. 
+
+
+There are two vectors. 1) **ddm** and 2) **ddm_clean**. The second vector does not include outliers. 
+
