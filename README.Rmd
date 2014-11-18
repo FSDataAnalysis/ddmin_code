@@ -13,6 +13,8 @@ For example zc vector and A vector create:
 
 dmin=zc-A
 
+There are examples of raw data provided inside the folder **Files**. 
+
 # STEPS
 
 1. Place files already in standard form into the folder **Files**
@@ -22,5 +24,36 @@ dmin=zc-A
 3. Run the ddmin code and the files will be processed. 
 
 
-There are two vectors. 1) **ddm** and 2) **ddm_clean**. The second vector does not include outliers. 
+There are two vectors for the distance: 1) **ddm** and 2) **ddm_clean**. The second vector does not include outliers. 
+
+
+# IMPORTANT ADDITIONAL INFORMATION
+
+
+In the main panel you can choose:
+
+1. Smoothing coefficient for dmin= zc-A. Typically 0.08-0.01  (see Matlab rloess fucntion)
+
+2. InVolts or conversion from amplitude in nm to Volts, i.e. 40 nm/Volt
+
+3. Cut off [nm] to calculate the deviation in dmin from a striaght line, i.e. non-zero interaction
+
+4. Remove points from start and end of the raw vectors to avoid errors. 
+
+5. Cut_off dAW is the distance at which local maxima will be looked for.
+Fr example 0.5 means look after 50 % of the raw data after non-zero tip-sample interaction. dAW calculates height and width of the feature reported 
+by Barcons et al. and Santos et al. 
+
+Barcons, V., Verdaguer, A., Font, J., Chiesa, M. & Santos, S. Nanoscale capillary interactions in dynamic atomic force microscopy. Journal of Physical Chemistry C 116, 7757-7766 (2012).
+
+Santos, S. et al. Stability, resolution, and ultra-low wear amplitude modulation atomic force microscopy of DNA: Small amplitude small set-point imaging. Applied Physics Letters 103, 063702-063705 (2013).
+
+## OUTPUT VECTORS 
+
+1.ddm and ddm_clean (after removing outliers) 
+
+2.distance_dWA
+
+3.height_dWA
+
 

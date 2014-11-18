@@ -1,5 +1,12 @@
+%%%%% Add amplitude phase deflection files and it will calculate minimum
+%%%%% distance of approach separation %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%% ddm  This is the vector before removing outliers
 
 
+%%%% ddm_clean  This is the vector after removing outliers 
+%%%% distance_dWA
+%%%% height_dWA
 
 clear all
 close all
@@ -17,25 +24,27 @@ fNames = dir(fullfile(fPath,'*.txt') );
 fNames = strcat(fPath, filesep, {fNames.name});
 count_trials=0;
 
-prompt= {'Smoothing Coefficient:', 'InVolts:', 'Cut off in nm:', 'Remove points start:', 'Remove points end:', 'Remove Outliers (0/1):'};
+prompt= {'Smoothing Coefficient:', 'InVolts:', 'Cut off in nm:', 'Remove points start:', 'Remove points end:', ...
+    'Remove Outliers (0/1):', 'Cut_off dAW:'};
 dlg_title='Inputs';
 num_lines=1;
-default={'0.03','40', '0.2e-9', '10', '2', '1'};
+default={'0.03','40', '0.2e-9', '10', '2', '1', '0.5'};
 answer=inputdlg(prompt,dlg_title,num_lines,default);
 
 %%%%%%% Data on outliers/or start and end of vectors %%%%%%%%%%%%%%%%%%%%%%
 
-
+s_d_min=str2double(answer(1)); 
 cut_off=str2double(answer(3));  % this is the 
 remove_start= str2double(answer(4));
 remove_end= str2double(answer(5));
 Remove_outliers= str2double(answer(6));
+cut_off_dAW= str2double(answer(7));
 
-sub_num=2;
+sub_num=0;
 
 %%%% Smoothing 
 
-s_d_min=0.02;
+s_AmEx=0.04;
 s_defl=0.02;
 s_d_min_Incr=0.02;
 
@@ -45,7 +54,7 @@ s_d_min_Incr=0.02;
 %%%%%%%%%%%%%%%%%%%%%%%% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-Smooth= str2double(answer(1));											
+Smooth= s_d_min;	
 AmpInvOLS =  str2double(answer(2));	
 
 M_size=5;						% Marker size. 6 for FFT simulation 3 for continuous
@@ -84,6 +93,8 @@ D_min_cut_off=zeros(1,length(fNames));
 ddm=zeros(1,length(fNames));
 
 MultiplierError=1;   % this is to find minima in difference of dmin
+distance_dWA=[];
+height_dWA=[];
 
 for i=1:length(fNames)
     DtAq=load(fNames{i});
@@ -296,6 +307,44 @@ for ccc=1:rrr:length_vectors
 
     cut_off_is(counter_file)=cut_off_is_dumb(1);
     
+    %%%% Find reduced amplitude Vector %%%%%%%%%%%%%%%%%%%%
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%     
+%     position_to_cut=cut_off_is(counter_file); 
+%     reduced_ZsnrEx=ZsnrEx(position_to_cut:end);
+%     reduced_AmEx=AmEx(position_to_cut:end);
+%     reduced_AmEx_Smth= smooth(reduced_AmEx,s_AmEx,'rloess');
+
+    %%% reduced dmin find %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    
+    AmEx_Smth= smooth(AmEx,s_AmEx,'rloess');
+    
+    reduced_1=cut_off_is(counter_file);
+    reduced_AmEx=AmEx_Smth(reduced_1:end);
+    reduced_zc=ZsnrEx(reduced_1:end);
+    
+    reduced_2=floor(cut_off_dAW*length(reduced_AmEx));
+    
+    reduced_AmEx_2=reduced_AmEx(reduced_2:end);
+    reduced_zc_2=reduced_zc(reduced_2:end);
+    
+    max_is=max(reduced_AmEx_2);
+    
+    index_max=find(reduced_AmEx_2==max_is);
+    
+    index_max_is=index_max(1);
+    
+    distance_dWA(counter_file)=abs(reduced_zc_2(index_max_is)-reduced_zc_2(end));
+    height_dWA(counter_file)=reduced_AmEx_2(index_max_is);
+    
+    figure(count_figures+4)
+    hold on
+    plot(ZsnrEx, AmEx_Smth, '.k', 'Markersize',5);
+    plot(reduced_zc_2(index_max_is), reduced_AmEx_2(index_max_is) , 'Vb', 'Markersize',15);
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    
+    figure(count_figures+3)
+    hold on
     D_max_cut_off(counter_file)=d_min_Smth( cut_off_is(counter_file));
     D_min_cut_off(counter_file)=min(d_min_Smth);
     
@@ -305,7 +354,8 @@ for ccc=1:rrr:length_vectors
     
     
     cd(strcat(fPath,filesep,foldname));
-    saveas(count_figures+3, strcat(num2str(count_trials),'_',num2str(3)),'fig')
+    saveas(count_figures+3, strcat(num2str(count_trials),'_',num2str(3)),'fig');
+    saveas(count_figures+4, strcat(num2str(count_trials),'_',num2str(4)),'fig');
     cd(originaldir);
     
 end
@@ -331,87 +381,38 @@ end
 toc
 
 
+% xlswrite('excel_file_dWA', height_dWA');
+% xlswrite('excel_file_distance', distance_dWA');
+% xlswrite('excel_file_ddm', ddm_clean');
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-%     Minimum_error=[];
-%     Position_Zc=[];
-%     for ii=1:1:1 %length(d_min_Smth)
-% % 
-%         Minimum_error_dumb=MultiplierError*min(abs(d_min_Smth(ii)-fitted_line_y.(file_name_foo)));
-%         Minimum_error(ii,1)=Minimum_error_dumb;
-%         
-%         Position_Zc_dumb=find(abs(d_min_Smth(ii)-fitted_line_y.(file_name_foo))<=abs(Minimum_error_dumb),1, 'last');
-%         Position_Zc(ii,1)=Position_Zc_dumb; % this is the position of the vector element
-%         Zc_found(ii,1)=ZsnrEx(Position_Zc_dumb);
-%         plot(Zc_found(ii,1),  d_min_Smth(Position_Zc_dumb),'Vk', 'Markersize',5)
 % 
-%     end
-    
-    
-    
-%     
-%     this=9;
-    
-	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%   CROPPING %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%	
-    %%%%   END Finding and plotting minimum point in separation  ========================================================================%%%%%%%%%%%%%%%%
-    %%%%%%% Picking range to plot %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% nnn = polyfit(reduced_ZsnrEx,reduced_AmEx_Smth,4)
+%  
+% fit_is= nnn(1)*(reduced_ZsnrEx).^4+nnn(2)*(reduced_ZsnrEx).^3+nnn(3)*(reduced_ZsnrEx).^2+nnn(4)*(reduced_ZsnrEx) ...
+%      +nnn(5)  %%*(reduced_ZsnrEx)+nnn(6);
 
-    %This section of code has been modified to crop automatically.
-    %from approximately 0 to 2. To speed up individual curve
-    %processing, use manual code below.
-%     x1=str2double(answer(6));
-%     x2=x1*10^-8;
-%     Pck=[1e-010,-2.4e-008;x2,-2.4e-008];
 
-    %To select range manually, comment in the following code:
-    %	[x1,y1]=ginput(2);
-    %Pck=[x1 , y1];
-    %Pck=sort(Pck,1); 
-		
-        
- 
-   %%% finding elements to crop ===============================================================================================================%%%%%
-   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-   
-	
-%     for ii=1:1:2
-% 
-%     Zc_values(ii,1)=Pck(ii,1); 
-%     Minimum_pick(ii,1)=Pck(ii,2);
-%     plot(Zc_values(ii,1),  Minimum_pick(ii,1),'Vk', 'Markersize',5)    
-%     Minimum_error_dumb=MultiplierError*min(abs(ZsnrEx-Zc_values(ii,1)));
-%     Minimum_error(ii,1)=Minimum_error_dumb;
-% 
-%     Position_Zc_dumb=find(abs(ZsnrEx-Zc_values(ii,1))<=abs(Minimum_error_dumb),1, 'last');
-%     Position_Zc(ii,1)=Position_Zc_dumb; % this is the position of the vector element
-%     Zc_found(ii,1)=ZsnrEx(Position_Zc_dumb);
-%     plot(Zc_found(ii,1),  d_min_Smth(Position_Zc_dumb),'Vk', 'Markersize',5)
-% 
-%     end  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
