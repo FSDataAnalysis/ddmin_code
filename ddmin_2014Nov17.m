@@ -24,27 +24,28 @@ fNames = dir(fullfile(fPath,'*.txt') );
 fNames = strcat(fPath, filesep, {fNames.name});
 count_trials=0;
 
-prompt= {'Smoothing Coefficient:', 'InVolts:', 'Cut off in nm:', 'Remove points start:', 'Remove points end:', ...
-    'Remove Outliers (0/1):', 'Cut_off dAW:'};
+prompt= {'Smoothing Coefficient(dmin):', 'InVolts:', 'Cut off in nm:', 'Remove points start:', 'Remove points end:', ...
+    'Remove Outliers (0/1):', 'Cut_off dAW:', 'Smoothing Coefficient(A):'};
 dlg_title='Inputs';
 num_lines=1;
-default={'0.03','40', '0.2e-9', '10', '2', '1', '0.5'};
+default={'0.02','40', '0.2e-9', '10', '2', '1', '0.5', '0.01'};
 answer=inputdlg(prompt,dlg_title,num_lines,default);
 
 %%%%%%% Data on outliers/or start and end of vectors %%%%%%%%%%%%%%%%%%%%%%
 
-s_d_min=str2double(answer(1)); 
+
 cut_off=str2double(answer(3));  % this is the 
 remove_start= str2double(answer(4));
 remove_end= str2double(answer(5));
 Remove_outliers= str2double(answer(6));
 cut_off_dAW= str2double(answer(7));
+s_AmEx= str2double(answer(8));
 
-sub_num=0;
+sub_num=2;
 
 %%%% Smoothing 
 
-s_AmEx=0.04;
+s_d_min=str2double(answer(1));
 s_defl=0.02;
 s_d_min_Incr=0.02;
 
@@ -54,7 +55,7 @@ s_d_min_Incr=0.02;
 %%%%%%%%%%%%%%%%%%%%%%%% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-Smooth= s_d_min;	
+Smooth= str2double(answer(1));											
 AmpInvOLS =  str2double(answer(2));	
 
 M_size=5;						% Marker size. 6 for FFT simulation 3 for continuous
@@ -381,11 +382,11 @@ end
 toc
 
 
-% xlswrite('excel_file_dWA', height_dWA');
-% xlswrite('excel_file_distance', distance_dWA');
-% xlswrite('excel_file_ddm', ddm_clean');
+xlswrite('excel_file_dWA', height_dWA');
+xlswrite('excel_file_distance', distance_dWA');
+xlswrite('excel_file_ddm', ddm_clean');
 
-
+save mydata 
 
 % 
 % nnn = polyfit(reduced_ZsnrEx,reduced_AmEx_Smth,4)
